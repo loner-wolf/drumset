@@ -1,49 +1,38 @@
 pipeline {
-    agent any
-
-    stages {
-        stage('Checkout') {
-            steps {
-                echo 'Checking out code...'
-                git 'https://github.com/loner-wolf/drumset'
-            }
-        }
-
-        stage('Build') {
-            steps {
-                echo 'Building the project...'
-                sh 'mvn clean package'
-            }
-        }
-
-        stage('Docker Build') {
-            steps {
-                echo 'Building Docker image...'
-                sh 'docker build -t nuckingfoob/drumset-app .'
-            }
-        }
-
-        stage('Docker Push') {
-            steps {
-                echo 'Pushing Docker image...'
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', passwordVariable: 'ShivOm@26', usernameVariable: 'nuckingfoob')]) {
-                    sh 'echo $DOCKER_PASSWORD | docker login -u nuckingfoob --password-ShivOm@26'
-                    sh 'docker push nuckingfoob/drumset-app'
-                }
-            }
-        }
-    }
+    agent any // Specifies where the pipeline will execute (e.g., on any available agent)
+	stages {
+	    stage('Checkout') {
+	        steps {
+	            // Steps to checkout your source code from SCM (Git)
+	            checkout scm
+	        }
+	    }
+	    stage('Build') {
+	        steps {
+	            // Steps to build your Maven project
+	            script {
+	                def mvnHome = tool name: 'Maven', type: 'maven'
+	                sh "${mvnHome}/bin/mvn clean package"
+	            }
+	        }
+	    }
+	    stage('Test') {
+	        steps {
+	            // Steps to run tests
+	            script {
+	                def mvnHome = tool name: 'Maven', type: 'maven'
+	                sh "${mvnHome}/bin/mvn test"
+	            }
+	        }
+	    }
+    // Add more stages as needed (e.g., Docker build and push)
+	}
 
     post {
+        // Define post-build actions here
         always {
-            echo 'Cleaning up...'
-            sh 'docker rmi nuckingfoob/drumset-app'
-        }
-        success {
-            echo 'Build and push successful!'
-        }
-        failure {
-            echo 'Build failed!'
-        }
+        echo 'Cleaning up...' // Example of a post-build action
     }
+    }
+    
 }
